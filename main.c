@@ -18,7 +18,7 @@ struct player {
     int health;
     int score;
     int keys;
-    int player_symbol;
+    char player_symbol;
 };
 
 struct player players[num_players];
@@ -51,6 +51,7 @@ void printmap() {
             printf("\n");
     }
 }
+    
 
 void placeWalls() {
 
@@ -101,7 +102,7 @@ void placeTraps() {
 void placeHealthPacks() {
     int healthPlaced = 0;
 
-    while(healthPlaced < 10) {
+    while(healthPlaced < 5) {
         int row = 1 + rand() % 13;
         int col = 1 + rand() % 13;
 
@@ -197,6 +198,18 @@ void movePlayer() {
         return;
     }
 
+    if(map_grid[new_row][new_col] == 'D') {
+        if(players[index].keys > 0) {
+            players[index].keys--;
+            map_grid[new_row][new_col] = road[0];
+            printf("door unlocked. remaining keys: %d\n", players[index].keys);
+        }
+
+        else {
+            printf("door is locked. you ran out keys.\n");
+        }
+    }
+
     if(map_grid[new_row][new_col] == '#'){
         printf("player hit a wall.\n");
         return;
@@ -208,9 +221,45 @@ void movePlayer() {
     players[index].row = new_row;
     players[index].col = new_col;
 
+    processTile(index);
+
     map_grid[players[index].row][players[index].col] = players[index].player_symbol;
 }
 
+void processTile(int index) {
+
+    int row = players[index].row;
+    int col = players[index].col;
+
+    if(hiddenTraps[row][col] == 1) {
+        players[index].health -= 20;
+        hiddenTraps[row][col] = 0;
+        printf("player stepped on a trap)\n");
+    }
+
+    if(map_grid[row][col] == 'H') {
+        players[index].health += 20;
+
+        if(players[index].health > 100) {
+            players[index].health = 100;
+        }
+
+        printf("player found a health pack.\n");
+    }
+
+    if(map_grid[row][col] == 'K') {
+        players[index].keys++;
+        printf("player found a key.\n");
+    }
+
+}
+
+void printPlayerStatus()  {
+    printf("\nplayer status: \n");
+    printf("HP: %d\n", players[0].health);
+    printf("Score: %d\n", players[0].score);
+    printf("Keys: %d\n\n", players[0].keys);
+}
 
 
 int main() {
@@ -227,12 +276,12 @@ int main() {
     placeDoors();
     placePlayers();
     
-    printmap();
-    movePlayer();
-    printmap();
+    while (1) {
+        printmap();
+        printPlayerStatus();
+        movePlayer();
+    }
 
-
-    
     return 0;
 }
 
