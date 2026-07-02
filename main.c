@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <string.h>
 
 #define size_raw 15
 #define size_col 15
@@ -13,7 +14,7 @@ char wall[] = "#";
 
 struct player {
     char name[20];
-    int row;
+    int raw;
     int col;
     int health;
     int score;
@@ -40,7 +41,7 @@ void initializeMap() {
         }
     }
 
-void printmap() {
+void printMap() {
 
         for(int i = 0; i < size_raw; i++) {
             
@@ -58,11 +59,11 @@ void placeWalls() {
         int wallPlaced = 0;
         
         while(wallPlaced < 30) {
-            int row = 1 + rand() % 13;
+            int raw = 1 + rand() % 13;
             int col = 1 + rand() % 13;
             
-            if(map_grid[row][col] == road[0]) {
-                map_grid[row][col] = wall[0];
+            if(map_grid[raw][col] == road[0]) {
+                map_grid[raw][col] = wall[0];
                 wallPlaced++;
         }
         }
@@ -74,11 +75,11 @@ void placeTreasures() {
 
     while(treasurePlaced < 12) {
 
-        int row = 1 + rand() % 13;
+        int raw = 1 + rand() % 13;
         int col = 1 + rand() % 13;
 
-        if(map_grid[row][col] == road[0] ) {
-            map_grid[row][col] = 'T';
+        if(map_grid[raw][col] == road[0] ) {
+            map_grid[raw][col] = 'T';
             treasurePlaced++;
         }
     }
@@ -89,11 +90,11 @@ void placeTraps() {
 
     while(trapPlaced < 10) {
 
-        int row = 1 + rand() % 13;
+        int raw = 1 + rand() % 13;
         int col = 1 + rand() % 13;
 
-        if(map_grid[row][col] == road[0] && hiddenTraps[row][col] == 0) {
-            hiddenTraps[row][col] = 1;
+        if(map_grid[raw][col] == road[0] && hiddenTraps[raw][col] == 0) {
+            hiddenTraps[raw][col] = 1;
             trapPlaced++;
         }
         }
@@ -103,11 +104,11 @@ void placeHealthPacks() {
     int healthPlaced = 0;
 
     while(healthPlaced < 5) {
-        int row = 1 + rand() % 13;
+        int raw = 1 + rand() % 13;
         int col = 1 + rand() % 13;
 
-        if(map_grid[row][col] == road[0]) {
-            map_grid[row][col] = 'H';
+        if(map_grid[raw][col] == road[0]) {
+            map_grid[raw][col] = 'H';
             healthPlaced++;
         }
     }
@@ -117,11 +118,11 @@ void placeKeys() {
     int keyPlaced = 0;
 
     while(keyPlaced < 3) {
-        int row = 1 + rand() % 13;
+        int raw = 1 + rand() % 13;
         int col = 1 + rand() % 13;
 
-        if(map_grid[row][col] == road[0]) {
-            map_grid[row][col] = 'K';
+        if(map_grid[raw][col] == road[0]) {
+            map_grid[raw][col] = 'K';
             keyPlaced++;
         }
     }
@@ -131,11 +132,11 @@ void placeDoors() {
     int doorPlaced = 0;
 
     while(doorPlaced < 3) {
-        int row = 1 + rand() % 13;
+        int raw = 1 + rand() % 13;
         int col = 1 + rand() % 13;
 
-        if(map_grid[row][col] == road[0]) {
-            map_grid[row][col] = 'D';
+        if(map_grid[raw][col] == road[0]) {
+            map_grid[raw][col] = 'D';
             doorPlaced++;
         }
     }
@@ -153,91 +154,36 @@ void placePlayers() {
         int placed = 0; // not placed yet
 
         while(placed == 0) {
-            int row = 1 + rand() % 13;
+            int raw = 1 + rand() % 13;
             int col = 1 + rand() % 13;
 
-            if(map_grid[row][col] == ' ') {
-                players[i].row = row;
+            if(map_grid[raw][col] == ' ') {
+                players[i].raw = raw;
                 players[i].col = col;
 
-                map_grid[row][col] = players[i].player_symbol;
+                map_grid[raw][col] = players[i].player_symbol;
                 placed = 1; // plasing the player
             }
         }
     }
 }
 
-void movePlayer() {
-    char move;
-    int index = 0;
-
-    printf("move(W, S, A, D): ");
-    scanf(" %c", &move);
-
-    int new_row = players[index].row;
-    int new_col = players[index].col;
-
-    if(move == 'W' || move == 'w') {
-        new_row--;
-    }
-
-    else if(move == 'S' || move =='s') {
-        new_row++;
-    }
-
-    else if(move == 'A' || move == 'a') {
-        new_col--;
-    }
-
-    else if(move == 'D' || move == 'd') {
-        new_col++;
-    }
-
-    else {
-        printf("invalide move.\n");
-        return;
-    }
-
-    if(map_grid[new_row][new_col] == 'D') {
-        if(players[index].keys > 0) {
-            players[index].keys--;
-            map_grid[new_row][new_col] = road[0];
-            printf("door unlocked. remaining keys: %d\n", players[index].keys);
-        }
-
-        else {
-            printf("door is locked. you ran out keys.\n");
-        }
-    }
-
-    if(map_grid[new_row][new_col] == '#'){
-        printf("player hit a wall.\n");
-        return;
-    }
-
-
-    map_grid[players[index].row][players[index].col] = road[0];
-
-    players[index].row = new_row;
-    players[index].col = new_col;
-
-    processTile(index);
-
-    map_grid[players[index].row][players[index].col] = players[index].player_symbol;
-}
-
 void processTile(int index) {
-
-    int row = players[index].row;
+    int raw = players[index].raw;
     int col = players[index].col;
 
-    if(hiddenTraps[row][col] == 1) {
+    if(hiddenTraps[raw][col] == 1) {
         players[index].health -= 20;
-        hiddenTraps[row][col] = 0;
-        printf("player stepped on a trap)\n");
+        hiddenTraps[raw][col] = 0;
+        printf("player stepped on a trap.\n");
     }
 
-    if(map_grid[row][col] == 'H') {
+    if(map_grid[raw][col] == 'T') {
+        players[index].score += 10;
+        printf("player found a treasre.\n");
+    }
+
+    if(map_grid[raw][col] == 'H') {
         players[index].health += 20;
 
         if(players[index].health > 100) {
@@ -247,11 +193,86 @@ void processTile(int index) {
         printf("player found a health pack.\n");
     }
 
-    if(map_grid[row][col] == 'K') {
+    if(map_grid[raw][col] == 'K') {
         players[index].keys++;
         printf("player found a key.\n");
     }
 
+}
+
+int isValidMove(int raw, int col) {
+
+    if(raw < 0 || raw >= size_raw || col < 0 || col >= size_col) {
+        return 0;
+    }
+    if(map_grid[raw][col] == '#') {
+        return 0;
+    }
+
+    return 1;
+}
+
+void movePlayer(int index) {
+    char move[10];
+
+    printf("move(W, S, A, D): ");
+    scanf(" %s", move);
+
+    if(strlen(move) > 4) {
+        printf("invalid move.step Kipped.\n");
+        return;
+    }
+
+    for(int i = 0; i <strlen(move); i++) {
+        int new_raw = players[index].raw;
+        int new_col = players[index].col;
+
+        if(move[i] == 'W' || move[i] == 'w') {
+            new_raw--;
+        }
+
+        else if(move[i] == 'S' || move[i] == 's') {
+            new_raw++;
+        }
+
+        else if(move[i] == 'A' || move[i] == 'a') {
+            new_col--;
+        }
+
+        else if(move[i] == 'D' || move[i] == 'd') {
+            new_col++;
+        }
+
+        else {
+            printf("invalid move.step skipped.\n");
+            continue;
+        }
+
+        if(isValidMove(new_raw, new_col) == 0) {
+            printf("Hit a wall. step skipped.\n");
+            continue;
+        }
+
+        if(map_grid[new_raw][new_col] == 'D') {
+            if(players[index].keys > 0) {
+                players[index].keys--;
+                map_grid[new_raw][new_col] = road[0];
+                printf("door unlocked. remaining keys: %d\n", players[index].keys);
+            }
+            else{
+                printf("door is locked. you dont have a key.\n");
+                continue;
+            }
+        }
+
+        map_grid[players[index].raw][players[index].col] = road[0];
+        players[index].raw = new_raw;
+        players[index].col = new_col;
+
+        processTile(index);
+
+        map_grid[players[index].raw][players[index].col] = players[index].player_symbol;
+    }
 }
 
 void printPlayerStatus()  {
@@ -275,13 +296,16 @@ int main() {
     placeKeys();
     placeDoors();
     placePlayers();
-    
+    printf("\n");
+
     while (1) {
-        printmap();
+        printMap();
         printPlayerStatus();
-        movePlayer();
+        movePlayer(0);
+        printf("\n");
     }
 
     return 0;
+
 }
 
