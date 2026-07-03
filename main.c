@@ -24,6 +24,10 @@ struct player {
 
 struct player players[num_players];
 int player_count = 1;
+int total_treasures = 12;
+int collected_treasures = 0;
+int collected_traps= 0;
+int game_over = 0;
 
 
 void initializeMap() {
@@ -142,6 +146,25 @@ void placeDoors() {
     }
 }
 
+void setupPlayers() {
+
+    do {
+        printf("\nenter number of playrs: ");
+        scanf("%d", &player_count);
+        printf("\n");
+
+        if(player_count < 1 || player_count > 3) {
+            printf("invalid number of players. enter again.\n");
+        }
+    }
+    while(player_count < 1 || player_count > 3);
+
+    for(int i = 0; i < player_count; i++) {
+        printf("enter name for player %d: ", i + 1);
+        scanf("%s", players[i].name);
+    }
+}
+
 void placePlayers() {
 
     for(int i = 0; i < player_count; i++) {
@@ -175,26 +198,41 @@ void processTile(int index) {
     if(hiddenTraps[raw][col] == 1) {
         players[index].health -= 20;
         hiddenTraps[raw][col] = 0;
+
+        if(players[index].health < 0) {
+            players[index].health = 0;
+        }
         printf("player stepped on a trap.\n");
     }
 
     if(map_grid[raw][col] == 'T') {
         players[index].score += 10;
-        printf("player found a treasre.\n");
+        collected_treasures++;
+        map_grid[raw][col] = road[0];
+
+        printf("player found a treasure.\n");
+
+        if(collected_treasures == total_treasures) {
+            printf("\nAll treasures collected. you win!\n");
+            game_over = 1;
+        }   
     }
 
-    if(map_grid[raw][col] == 'H') {
+    else if(map_grid[raw][col] == 'H') {
         players[index].health += 20;
 
         if(players[index].health > 100) {
             players[index].health = 100;
         }
+        map_grid[raw][col] = road[0];
 
         printf("player found a health pack.\n");
     }
 
-    if(map_grid[raw][col] == 'K') {
+    else if(map_grid[raw][col] == 'K') {
         players[index].keys++;
+        map_grid[raw][col] = road[0];
+
         printf("player found a key.\n");
     }
 
@@ -276,12 +314,25 @@ void movePlayer(int index) {
 }
 
 void printPlayerStatus()  {
-    printf("\nplayer status: \n");
-    printf("HP: %d\n", players[0].health);
-    printf("Score: %d\n", players[0].score);
-    printf("Keys: %d\n\n", players[0].keys);
+    printf("\nplayer status: \n\n");
+
+    for(int i = 0; i < player_count; i++)  {
+        printf("player %d (%s):   | HP: %d    | Score: %d   | Keys: %d\n\n",
+               i + 1, players[i].name, players[i].health, players[i].score, players[i].keys);
+    }
+
+    printf("Treasures collected: %d/%d\n\n", collected_treasures, total_treasures);
 }
 
+int all_players_failed() {
+    for(int i = 0; i < player_count; i++) {
+        if(players[i].health > 0) {
+            return 0;
+        }
+    }
+
+    return 1;
+}
 
 int main() {
 
@@ -295,14 +346,28 @@ int main() {
     placeHealthPacks();
     placeKeys();
     placeDoors();
+    setupPlayers();
     placePlayers();
     printf("\n");
 
-    while (1) {
+    while (game_over == 0) {
         printMap();
         printPlayerStatus();
-        movePlayer(0);
-        printf("\n");
+
+        for(int i = 0; i < player_count; i++) {
+            if(players[i].health > 0) {
+                printf("\nplayer %s turn >>>\n\n", players[i].name);
+                movePlayer(i);
+            }
+            else {
+                printf("\nplayer %s is failed. next player turn >>>\n", players[i].name);
+            }
+        }
+
+        if(all_players_failed() == 1) {
+            printf("\nAll players failed. game over.\n");
+            game_over = 1;
+        }
     }
 
     return 0;
