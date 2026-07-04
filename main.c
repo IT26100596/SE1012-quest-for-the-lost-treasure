@@ -11,6 +11,10 @@ char map_grid[size_raw][size_col];
 int hiddenTraps[size_raw][size_col] = {0};
 char road[] = " ";
 char wall[] = "#";
+char gameLogs[50][100];
+int logCount = 0;
+
+int remainingTreasures();
 
 struct player {
     char name[20];
@@ -57,7 +61,6 @@ void printMap() {
     }
 }
     
-
 void placeWalls() {
 
         int wallPlaced = 0;
@@ -191,6 +194,82 @@ void placePlayers() {
     }
 }
 
+void printRecentLog() {
+    printf("\n---------- game log ----------\n");
+
+    if(logCount == 0) {
+        printf("no events for now.\n");
+    }
+    else {
+        for(int i = 0; i < logCount; i++) {
+            printf("%d. %s\n", i + 1, gameLogs[i]);
+        }
+    }
+
+    printf("--------------------\n");
+}
+
+void saveLog() {
+    FILE *file = fopen("gamelog.txt", "w");
+
+    if(file == NULL) {
+        printf("Could not save game log.\n");
+        return;
+    }
+
+    for(int i = 0; i < logCount; i++) {
+        fprintf(file, "%d. %s\n", i + 1, gameLogs[i]);
+    }
+
+    fclose(file);
+    printf("Game log saved to gamelog.txt\n");
+}
+
+void saveGame() {
+    FILE *file = fopen("savegame.dat", "wb");
+
+    if(file == NULL) {
+        printf("Could not save game.\n");
+        return;
+    }
+
+    fwrite(&player_count, sizeof(int), 1, file);
+    fwrite(players, sizeof(struct player), num_players, file);
+    fwrite(map_grid, sizeof(char), size_raw * size_col, file);
+    fwrite(hiddenTraps, sizeof(int), size_raw * size_col, file);
+    fwrite(&collected_treasures, sizeof(int), 1, file);
+
+    fclose(file);
+
+    printf("Game saved to savegame.dat\n");
+}
+
+void loadGame() {
+    FILE *file = fopen("savegame.dat", "rb");
+
+    if(file == NULL) {
+        printf("No saved game found.\n");
+        return;
+    }
+
+    fread(&player_count, sizeof(int), 1, file);
+    fread(players, sizeof(struct player), num_players, file);
+    fread(map_grid, sizeof(char), size_raw * size_col, file);
+    fread(hiddenTraps, sizeof(int), size_raw * size_col, file);
+    fread(&collected_treasures, sizeof(int), 1, file);
+
+    fclose(file);
+
+    printf("Game loaded from savegame.dat\n");
+}
+
+void addLog(char message[]) {
+    if(logCount < 50) {
+        strcpy(gameLogs[logCount], message);
+        logCount++;
+    }
+}
+
 void processTile(int index) {
     int raw = players[index].raw;
     int col = players[index].col;
@@ -203,6 +282,8 @@ void processTile(int index) {
             players[index].health = 0;
         }
         printf("player stepped on a trap.\n");
+        addLog("player stepped on a trap.");
+       
     }
 
     if(map_grid[raw][col] == 'T') {
@@ -211,8 +292,9 @@ void processTile(int index) {
         map_grid[raw][col] = road[0];
 
         printf("player found a treasure.\n");
+        addLog("player found a treasure.");
 
-        if(collected_treasures == total_treasures) {
+        if(remainingTreasures() == 0) {
             printf("\nAll treasures collected. you win!\n");
             game_over = 1;
         }   
@@ -227,6 +309,7 @@ void processTile(int index) {
         map_grid[raw][col] = road[0];
 
         printf("player found a health pack.\n");
+        addLog("player found a health pack.");
     }
 
     else if(map_grid[raw][col] == 'K') {
@@ -234,8 +317,19 @@ void processTile(int index) {
         map_grid[raw][col] = road[0];
 
         printf("player found a key.\n");
+        addLog("A player found a key.");
     }
 
+}
+
+int isPlayerThere(int raw, int col) {
+    for(int i = 0; i < player_count; i++) {
+        if(players[i].raw == raw && players[i].col == col && players[i].health > 0) {
+            printf("player %s is here.\n", players[i].name);
+            return 1;
+        }
+    }
+    return 0;
 }
 
 int isValidMove(int raw, int col) {
@@ -253,7 +347,7 @@ int isValidMove(int raw, int col) {
 void movePlayer(int index) {
     char move[10];
 
-    printf("move(W, S, A, D): ");
+    printf("enter move - W, S, A, D, P to save, or Q to quit: ");
     scanf(" %s", move);
 
     if(strlen(move) > 4) {
@@ -261,9 +355,20 @@ void movePlayer(int index) {
         return;
     }
 
-    for(int i = 0; i <strlen(move); i++) {
+    for(int i = 0; i < strlen(move); i++) {
         int new_raw = players[index].raw;
         int new_col = players[index].col;
+
+        if(move[i] == 'P' || move[i] == 'p') {
+            saveGame();
+            continue;
+        }
+
+        if(move[i] == 'Q' || move[i] =='q') {
+            printf("player quit the game.\n");
+            game_over = 1;
+            return;
+        }
 
         if(move[i] == 'W' || move[i] == 'w') {
             new_raw--;
@@ -291,14 +396,21 @@ void movePlayer(int index) {
             continue;
         }
 
+        if(isPlayerThere(new_raw, new_col) == 1) {
+            printf("another player is there. step skipped.\n");
+            continue;
+        }
+
         if(map_grid[new_raw][new_col] == 'D') {
             if(players[index].keys > 0) {
                 players[index].keys--;
                 map_grid[new_raw][new_col] = road[0];
                 printf("door unlocked. remaining keys: %d\n", players[index].keys);
+                addLog("door was unlocked.");
             }
             else{
                 printf("door is locked. you dont have a key.\n");
+                addLog("player tried to open a locked door.");
                 continue;
             }
         }
@@ -313,6 +425,61 @@ void movePlayer(int index) {
     }
 }
 
+int remainingTreasures() {
+    int count = 0;
+
+    for(int i = 0; i < size_raw; i++) {
+        for(int j = 0; j < size_col; j++) {
+            if(map_grid[i][j] == 'T') {
+                count++;
+            }
+        }
+    }
+
+    return count;
+}
+
+void showScore() {
+    int winner = 0;
+
+    for(int i = 1; i < player_count; i++) {
+        if(players[i].score > players[winner].score) {
+            winner = i;
+        }
+    }
+    printf("\n>>>>>>>>>> Score Board <<<<<<<<<<\n\n");
+
+    for(int i = 0; i < player_count; i++) {
+        printf("player %d (%s):   | HP: %d    | Score: %d   | Keys: %d\n\n", i + 1, players[i].name, players[i].health, players[i].score, players[i].keys);
+    }
+
+    printf("Winner is player: %s", players[winner].name);
+
+    printf("\n\n>>>>>>>>>> Game Over <<<<<<<<<<\n\n");
+}
+
+void showStats() {
+    int alivePlayer = 0;
+    int failedPlayer = 0;
+
+    for(int i = 0; i < player_count; i++) {
+        if(players[i].health > 0) {
+            alivePlayer++;
+        }
+        else {
+            failedPlayer++;
+        }
+    }
+
+    printf("\n>>>>>>>>>> Game Stats <<<<<<<<<<\n\n");
+    printf("Total players: %d\n", player_count);
+    printf("Alive Players: %d\n", alivePlayer);
+    printf("Failed Players: %d\n", failedPlayer);
+    printf("Treasures collected: %d\n", collected_treasures);
+    printf("Treasures remaining: %d\n", remainingTreasures());
+    printf("------------------------------\n");
+}
+
 void printPlayerStatus()  {
     printf("\nplayer status: \n\n");
 
@@ -321,7 +488,7 @@ void printPlayerStatus()  {
                i + 1, players[i].name, players[i].health, players[i].score, players[i].keys);
     }
 
-    printf("Treasures collected: %d/%d\n\n", collected_treasures, total_treasures);
+    printf("Treasures remaining: %d/%d\n\n", remainingTreasures(), total_treasures);
 }
 
 int all_players_failed() {
@@ -334,9 +501,52 @@ int all_players_failed() {
     return 1;
 }
 
+void gameLoop() {
+    while (game_over == 0) {
+        printMap();
+        printPlayerStatus();
+
+        for(int i = 0; i < player_count; i++) {
+            if(players[i].health > 0) {
+                printf("\nplayer %s turn >>>\n\n", players[i].name);
+                movePlayer(i);
+
+                if(game_over == 1) {
+                    break;
+                }
+            }
+            else {
+                printf("\nplayer %s is failed. next player turn >>>\n", players[i].name);
+            }
+        }
+
+        if(all_players_failed() == 1) {
+            printf("\nAll players failed. game over.\n");
+            game_over = 1;
+        }
+    }
+
+    showScore();
+    showStats();
+    printRecentLog();
+    saveLog();
+    
+}
+
 int main() {
 
     srand(time(NULL));
+    int choice;
+    printf("1. New Game\n");
+    printf("2. Load Game\n");
+    printf("Enter choice: ");
+    scanf("%d", &choice);
+
+if(choice == 2) {
+    loadGame();
+    gameLoop();
+    return 0;
+}
 
     initializeMap();
 
@@ -350,25 +560,9 @@ int main() {
     placePlayers();
     printf("\n");
 
-    while (game_over == 0) {
-        printMap();
-        printPlayerStatus();
+    gameLoop();
 
-        for(int i = 0; i < player_count; i++) {
-            if(players[i].health > 0) {
-                printf("\nplayer %s turn >>>\n\n", players[i].name);
-                movePlayer(i);
-            }
-            else {
-                printf("\nplayer %s is failed. next player turn >>>\n", players[i].name);
-            }
-        }
 
-        if(all_players_failed() == 1) {
-            printf("\nAll players failed. game over.\n");
-            game_over = 1;
-        }
-    }
 
     return 0;
 
