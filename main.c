@@ -30,7 +30,6 @@ struct player players[num_players];
 int player_count = 1;
 int total_treasures = 12;
 int collected_treasures = 0;
-int collected_traps= 0;
 int game_over = 0;
 
 
@@ -152,7 +151,7 @@ void placeDoors() {
 void setupPlayers() {
 
     do {
-        printf("\nenter number of playrs: ");
+        printf("\nenter number of players: ");
         scanf("%d", &player_count);
         printf("\n");
 
@@ -527,28 +526,34 @@ void gameLoop() {
     }
 
     showScore();
+
     showStats();
+
     printRecentLog();
+
     saveLog();
     
 }
 
+
 int main() {
 
     srand(time(NULL));
+
     int choice;
-    printf("1. New Game\n");
+    printf("\n1. New Game\n");
     printf("2. Load Game\n");
-    printf("Enter choice: ");
+    printf("\nEnter choice: ");
     scanf("%d", &choice);
+    
+    if(choice == 2) {
+        loadGame();
+        gameLoop();
+        return 0;
+    }
 
-if(choice == 2) {
-    loadGame();
-    gameLoop();
-    return 0;
-}
 
-    initializeMap();
+   initializeMap();
 
     placeWalls();
     placeTreasures();
@@ -567,4 +572,3 @@ if(choice == 2) {
     return 0;
 
 }
-
