@@ -32,7 +32,7 @@ int total_treasures = 12;
 int collected_treasures = 0;
 int game_over = 0;
 
-
+//map boundry
 void initializeMap() {
 
         for(int i = 0; i < size_raw; i++) {
@@ -48,6 +48,7 @@ void initializeMap() {
         }
     }
 
+//print map
 void printMap() {
 
         for(int i = 0; i < size_raw; i++) {
@@ -59,7 +60,8 @@ void printMap() {
             printf("\n");
     }
 }
-    
+
+//placing the walls
 void placeWalls() {
 
         int wallPlaced = 0;
@@ -74,7 +76,8 @@ void placeWalls() {
         }
         }
     }
-
+    
+//placing the treasure
 void placeTreasures() {
 
     int treasurePlaced = 0;
@@ -91,6 +94,7 @@ void placeTreasures() {
     }
 }
 
+//placing random traps
 void placeTraps() {
     int trapPlaced = 0;
 
@@ -105,7 +109,8 @@ void placeTraps() {
         }
         }
     }
-
+    
+//placing the health packs
 void placeHealthPacks() {
     int healthPlaced = 0;
 
@@ -120,6 +125,7 @@ void placeHealthPacks() {
     }
 }
 
+//placing the keys
 void placeKeys() {
     int keyPlaced = 0;
 
@@ -134,6 +140,7 @@ void placeKeys() {
     }
 }
 
+//placing the doors
 void placeDoors() {
     int doorPlaced = 0;
 
@@ -148,6 +155,7 @@ void placeDoors() {
     }
 }
 
+// setting up players
 void setupPlayers() {
 
     do {
@@ -167,6 +175,7 @@ void setupPlayers() {
     }
 }
 
+//placing the players on map
 void placePlayers() {
 
     for(int i = 0; i < player_count; i++) {
@@ -193,6 +202,7 @@ void placePlayers() {
     }
 }
 
+//function to print recent game log
 void printRecentLog() {
     printf("\n---------- game log ----------\n");
 
@@ -208,6 +218,7 @@ void printRecentLog() {
     printf("--------------------\n");
 }
 
+//funtion to save log
 void saveLog() {
     FILE *file = fopen("gamelog.txt", "w");
 
@@ -224,6 +235,7 @@ void saveLog() {
     printf("Game log saved to gamelog.txt\n");
 }
 
+//save whole game
 void saveGame() {
     FILE *file = fopen("savegame.dat", "wb");
 
@@ -243,6 +255,7 @@ void saveGame() {
     printf("Game saved to savegame.dat\n");
 }
 
+//start game from recently stoped place
 void loadGame() {
     FILE *file = fopen("savegame.dat", "rb");
 
@@ -262,6 +275,7 @@ void loadGame() {
     printf("Game loaded from savegame.dat\n");
 }
 
+
 void addLog(char message[]) {
     if(logCount < 50) {
         strcpy(gameLogs[logCount], message);
@@ -269,6 +283,7 @@ void addLog(char message[]) {
     }
 }
 
+// check players status on each tile and print
 void processTile(int index) {
     int raw = players[index].raw;
     int col = players[index].col;
@@ -321,6 +336,7 @@ void processTile(int index) {
 
 }
 
+
 int isPlayerThere(int raw, int col) {
     for(int i = 0; i < player_count; i++) {
         if(players[i].raw == raw && players[i].col == col && players[i].health > 0) {
@@ -331,6 +347,7 @@ int isPlayerThere(int raw, int col) {
     return 0;
 }
 
+//checking the inputs are valid moves
 int isValidMove(int raw, int col) {
 
     if(raw < 0 || raw >= size_raw || col < 0 || col >= size_col) {
@@ -343,6 +360,7 @@ int isValidMove(int raw, int col) {
     return 1;
 }
 
+//moving player through map
 void movePlayer(int index) {
     char move[10];
 
@@ -424,6 +442,7 @@ void movePlayer(int index) {
     }
 }
 
+//remaining treasures to coll
 int remainingTreasures() {
     int count = 0;
 
@@ -438,6 +457,7 @@ int remainingTreasures() {
     return count;
 }
 
+//showing each player scores
 void showScore() {
     int winner = 0;
 
@@ -457,6 +477,7 @@ void showScore() {
     printf("\n\n>>>>>>>>>> Game Over <<<<<<<<<<\n\n");
 }
 
+//showing each player statistic
 void showStats() {
     int alivePlayer = 0;
     int failedPlayer = 0;
@@ -479,6 +500,7 @@ void showStats() {
     printf("------------------------------\n");
 }
 
+//function to print each player status
 void printPlayerStatus()  {
     printf("\nplayer status: \n\n");
 
@@ -490,6 +512,7 @@ void printPlayerStatus()  {
     printf("Treasures remaining: %d/%d\n\n", remainingTreasures(), total_treasures);
 }
 
+//function to if all players failed in the middle of the game
 int all_players_failed() {
     for(int i = 0; i < player_count; i++) {
         if(players[i].health > 0) {
@@ -500,6 +523,7 @@ int all_players_failed() {
     return 1;
 }
 
+//game main logic
 void gameLoop() {
     while (game_over == 0) {
         printMap();
@@ -526,16 +550,13 @@ void gameLoop() {
     }
 
     showScore();
-
     showStats();
-
     printRecentLog();
-
     saveLog();
     
 }
 
-
+//calling functions
 int main() {
 
     srand(time(NULL));
@@ -551,8 +572,7 @@ int main() {
         gameLoop();
         return 0;
     }
-
-
+    
    initializeMap();
 
     placeWalls();
@@ -566,8 +586,6 @@ int main() {
     printf("\n");
 
     gameLoop();
-
-
 
     return 0;
 
